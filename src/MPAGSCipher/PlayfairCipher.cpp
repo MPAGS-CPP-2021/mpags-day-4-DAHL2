@@ -1,11 +1,12 @@
 #include "PlayfairCipher.hpp"
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 
 PlayfairCipher::PlayfairCipher(const std::string& key)
 {
-    setKey(key);
+    this->setKey(key);
 }
 
 void PlayfairCipher::setKey(const std::string& key)
@@ -14,9 +15,13 @@ void PlayfairCipher::setKey(const std::string& key)
     key_ = key;
     
     // Append the alphabet
-    
+    key_ += alphabet_;
+
     // Make sure the key is upper case
+    std::transform(key_.begin(), key_.end(), key_.begin(), ::toupper);
+
     // Remove non-alpha characters
+
     // Change J -> I
     
     // Remove duplicated letters
