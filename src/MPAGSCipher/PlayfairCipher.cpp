@@ -43,7 +43,7 @@ void PlayfairCipher::setKey(const std::string& key)
 
     // Change J -> I
     key_ = convertItoJ(key_);
-    
+
     // Remove duplicated letters
     std::string foundCharacters {""};
 
@@ -62,9 +62,6 @@ void PlayfairCipher::setKey(const std::string& key)
     // Store the coords of each letter
     // Uses typedefs defined for the class
     // coord is std::pair<int, int> defined for class
-    letterCoordMap letterToCoordMap;
-    coordLetterMap coordToLetterMap;
-
     for (size_t i {0}; i < 25; i++) { // Length of key_, should be 25, if not we have a problem elsewhere!
         // Using (row, column) format:
         // (1,2) corresponds to
@@ -73,33 +70,91 @@ void PlayfairCipher::setKey(const std::string& key)
         // O O O O O
         // O O O O O
         // O O O O O
-        letterToCoordMap[key_[i]] = coord(i%5, i/5);
-        coordToLetterMap[coord(i%5, i/5)] = key_[i];
-    }
 
-    // Store the playfair cipher key map
-    lToCMap_ = letterToCoordMap;
-    cToLMap_ = coordToLetterMap;
+        // Store the playfair cipher key map
+        coordLookup_[key_[i]] = coord(i%5, i/5);
+        charLookup_[coord(i%5, i/5)] = key_[i];
+    }
 }
 
 std::string PlayfairCipher::applyCipher(const std::string& inputText,
                                       const CipherMode cipherMode) const
 {
     // Change J → I
+    const std::string message {convertItoJ(inputText)};
 
+    // Initialise paired message
+    std::string pairedMsg {message};
 
-    // If repeated chars in a digraph add an X or Q if XX
+    // Only change the message if it should be encrypted
+    // Decrypting message ought to have the right form already
+    // We have absolutely no protection yet, but given we are covering
+    //  exceptions later, I assume there's no point adding anything now
+    if (cipherMode == CipherMode::Encrypt) {
+        // If repeated chars in a digraph add an X or Q if XX
+        pairedMsg = message[0];
+        for (size_t i {1}; i < message.size(); i++) {
+            char current {message[i]};
+            char prev {message[i-1]};
+            if (current != prev) {
+                pairedMsg += current;
+            } else if (current != 'X') {
+                pairedMsg += 'X';
+                pairedMsg += current;
+            } else
+                pairedMsg += "QX";
+        }
 
-    // if the size of input is odd, add a trailing Z
+        // if the size of input is odd, add a trailing Z
+        if (pairedMsg.size()%2 == 1)
+            pairedMsg += 'Z';
+    }
+
+    std::string output {""};
+    
+    // 6 if Encrypt, 4 is Decrypt: sets direction to change values
+    // - This is 5 +/- 1  to ensure we don't get negative results after taking % 5 (grid size = 5)
+    // Annoying warning means this has to be int (rather than i.e. int8_t)
+    const int direction {2 * (cipherMode == CipherMode::Encrypt) + 4};
 
     // Loop over the input in Digraphs
-
-    // - Find the coords in the grid for each digraph
-    // - Apply the rules to these coords to get 'new' coords
-    // - Find the letter associated with the new coords
-    // return the text
-    if (cipherMode == CipherMode::Encrypt)  // TEMPORARY
-    {
-    return inputText;
-    } else {return inputText;}
+    for (size_t i {0}; i < pairedMsg.size(); i+=2) {
+        // - Find the coords in the grid for each digraph
+        coord c1 {coordLookup_.at( pairedMsg[i]   )};
+        coord c2 {coordLookup_.at( pairedMsg[i+1] )};
+        // - Apply the rules to these coords to get 'new' coords
+        if (c1.first == c2.first) {
+            // - Find the letters associated with the new coords
+            // - Next character on same row with wrap around
+            output += charLookup_.at(
+                coord(c1.first, (c1.second + direction) %5)
+            );
+            output += charLookup_.at(
+                coord(c2.first, (c2.second + direction) %5)
+            );
+        }
+        else if (c1.second == c2.second) {
+            // - Find the letters associated with the new coords
+            // - Next character on same column with wrap around
+            output += charLookup_.at(
+                coord((c1.first + direction) %5, c1.second)
+            );
+            output += charLookup_.at(
+                coord((c2.first + direction) %5, c2.second)
+            );
+        }
+        else {
+            // - Find the letters associated with the new coords
+            // - Swap the column the letters appear in
+            output += charLookup_.at(
+                coord(c1.first, c2.second)
+            );
+            output += charLookup_.at(
+                coord(c2.first, c1.second)
+            );
+        }
+    }
+    // Return the text
+    return output;
 }
+

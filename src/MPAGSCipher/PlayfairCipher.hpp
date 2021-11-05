@@ -53,7 +53,7 @@ class PlayfairCipher {
 
 
   private:
-    using coord = std::pair<int, int>;
+    using coord = std::pair<size_t, size_t>;
     using letterCoordMap = std::map<char, coord>;
     using coordLetterMap = std::map<coord, char>;
 
@@ -63,8 +63,8 @@ class PlayfairCipher {
     /// The cipher key, essentially a constant shift to be applied
     std::string key_{""};
 
-    letterCoordMap lToCMap_;
-    coordLetterMap cToLMap_;
+    letterCoordMap coordLookup_;
+    coordLetterMap charLookup_;
 };
 
 #endif
