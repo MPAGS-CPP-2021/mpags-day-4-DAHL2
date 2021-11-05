@@ -81,6 +81,9 @@ void PlayfairCipher::setKey(const std::string& key)
 std::string PlayfairCipher::applyCipher(const std::string& inputText,
                                         const CipherMode cipherMode) const
 {
+    if (inputText == "")
+        return "";
+
     // Change J → I
     const std::string message{convertItoJ(inputText)};
 
@@ -88,34 +91,60 @@ std::string PlayfairCipher::applyCipher(const std::string& inputText,
     std::string pairedMsg{message};
 
     // Only change the message if it should be encrypted
-    // Decrypting message ought to have the right form already
+    // - Decrypting message ought to have the right form already
     // We have absolutely no protection yet, but given we are covering
     //  exceptions later, I assume there's no point adding anything now
     if (cipherMode == CipherMode::Encrypt) {
         // If repeated chars in a digraph add an X or Q if XX
-        pairedMsg = message[0];
-        bool secondInPair{
-            true};    // There is definitely a batter way to do this...
-        for (size_t i{1}; i < message.size(); i++) {
-            char current{message[i]};
-            char prev{message[i - 1]};
-            if (secondInPair && current == prev && current != 'X') {
-                // If second in pair, need and x before character, and next character is second in pair
+        pairedMsg = "";
+
+        // With this vector, only have to update 1 variable per loop in most loops
+        // Current character is dual[secondInDual], previous is dual[!secondInDual]
+        std::vector<char> dual{message[0], message[1]};
+
+        for (size_t i{0}; i < message.size(); i++) {
+            if (dual[0] != dual[1]) {
+                pairedMsg += dual[0];
+                pairedMsg += dual[1];
+
+                // This will not raise an exception, just be empty characters if out of bounds
+                dual[0] = message[i + 2];
+                dual[1] = message[i + 3];
+
+                i++;    // can skip the next value, since we process it here
+            } else if (dual[0] != 'X') {
+                pairedMsg += dual[0];
                 pairedMsg += 'X';
-                pairedMsg += current;
-                continue;
-            } else if (secondInPair && current == prev && current == 'X') {
-                // If x, need a q instead of x as previous character
-                pairedMsg += "QX";
-                continue;
+
+                // Only need to update the second character, since what is now the second is
+                //  shifted to be the first character, but this is equal to the second character
+                dual[1] = message[i + 2];
+
+                // Don't add extra increment to i
+            } else {
+                pairedMsg += dual[0];
+                pairedMsg += 'Q';
+
+                // Only need to update the second character, since what is now the second is
+                //  shifted to be the first character, but this is equal to the second character
+                dual[1] = message[i + 2];
+
+                // Don't add extra increment to i
             }
-            pairedMsg += current;
-            secondInPair = !secondInPair;
         }
 
-        // if the size of input is odd, add a trailing Z
-        if (pairedMsg.size() % 2 == 1)
-            pairedMsg += 'Z';
+        // If the size of input is odd, add a trailing Z
+        // '\0' is null char
+        if (pairedMsg.back() == '\0') {
+            // Remove the null character
+            pairedMsg.pop_back();
+            pairedMsg += 'Z' - 9 * (*pairedMsg.rbegin() == 'Z');
+            // Weird iterator thing:
+            // If
+            //  a * reference to the value of the iterator:
+            //  rbegin() which looks at the contents of the string in reverse
+            // is a Z, then subtract 9 from char 'Z' to turn it into 'Q'
+        }
     }
 
     std::string output{""};
