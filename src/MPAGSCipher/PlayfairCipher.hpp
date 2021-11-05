@@ -4,6 +4,7 @@
 #include "CipherMode.hpp"
 
 #include <cstddef>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -26,6 +27,14 @@ class PlayfairCipher {
     explicit PlayfairCipher(const std::string& key);
 
     /**
+     * \brief Convert all instances of J to I in given string
+     *
+     * \param input the string in which to perform the J to I conversion
+     * \return a copy if the input string with J converted to I
+     */
+    static std::string convertItoJ(const std::string& input);
+
+    /**
      * \brief Set the key to a new value
      *
      * \param key new value of the key
@@ -44,11 +53,18 @@ class PlayfairCipher {
 
 
   private:
+    using coord = std::pair<int, int>;
+    using letterCoordMap = std::map<char, coord>;
+    using coordLetterMap = std::map<coord, char>;
+
     /// The alphabet - used to determine the cipher character given the plain character and the key
     const std::string alphabet_{"ABCDEFGHIJKLMNOPQRSTUVWXYZ"};
 
     /// The cipher key, essentially a constant shift to be applied
     std::string key_{""};
+
+    letterCoordMap lToCMap_;
+    coordLetterMap cToLMap_;
 };
 
 #endif

@@ -2,11 +2,24 @@
 
 #include <algorithm>
 #include <iostream>
+#include <map>
 #include <string>
 
 PlayfairCipher::PlayfairCipher(const std::string& key)
 {
     this->setKey(key);
+}
+
+std::string PlayfairCipher::convertItoJ(const std::string& input) {
+    auto jToI = [] (const char c) {
+        if (c == 'J')
+            return 'I';
+        else
+            return c;
+    };
+    std::string output {input};
+    std::transform(input.begin(), input.end(), output.begin(), jToI);
+    return output;
 }
 
 void PlayfairCipher::setKey(const std::string& key)
@@ -29,14 +42,8 @@ void PlayfairCipher::setKey(const std::string& key)
         key_.end());
 
     // Change J -> I
-    auto jToI = [] (const char c) {
-        if (c == 'J')
-            return 'I';
-        else
-            return c;
-    };
-    std::transform(key_.begin(), key_.end(), key_.begin(), jToI);
-
+    key_ = convertItoJ(key_);
+    
     // Remove duplicated letters
     std::string foundCharacters {""};
 
@@ -53,14 +60,33 @@ void PlayfairCipher::setKey(const std::string& key)
         key_.end());
 
     // Store the coords of each letter
-    
-    // Store the playfair cihper key map
+    // Uses typedefs defined for the class
+    // coord is std::pair<int, int> defined for class
+    letterCoordMap letterToCoordMap;
+    coordLetterMap coordToLetterMap;
+
+    for (size_t i {0}; i < 25; i++) { // Length of key_, should be 25, if not we have a problem elsewhere!
+        // Using (row, column) format:
+        // (1,2) corresponds to
+        // O O O O O
+        // O O X O O
+        // O O O O O
+        // O O O O O
+        // O O O O O
+        letterToCoordMap[key_[i]] = coord(i%5, i/5);
+        coordToLetterMap[coord(i%5, i/5)] = key_[i];
+    }
+
+    // Store the playfair cipher key map
+    lToCMap_ = letterToCoordMap;
+    cToLMap_ = coordToLetterMap;
 }
 
 std::string PlayfairCipher::applyCipher(const std::string& inputText,
                                       const CipherMode cipherMode) const
 {
     // Change J → I
+
 
     // If repeated chars in a digraph add an X or Q if XX
 
