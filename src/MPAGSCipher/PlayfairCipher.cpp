@@ -94,29 +94,23 @@ std::string PlayfairCipher::applyCipher(const std::string& inputText,
     if (cipherMode == CipherMode::Encrypt) {
         // If repeated chars in a digraph add an X or Q if XX
         pairedMsg = message[0];
-        bool firstInPair{
-            false};    // There is definitely a batter way to do this...
+        bool secondInPair{
+            true};    // There is definitely a batter way to do this...
         for (size_t i{1}; i < message.size(); i++) {
             char current{message[i]};
-            if (firstInPair) {
-                // If the first of a pair, don't bother checking previous result
+            char prev{message[i - 1]};
+            if (secondInPair && current == prev && current != 'X') {
+                // If second in pair, need and x before character, and next character is second in pair
+                pairedMsg += 'X';
                 pairedMsg += current;
-                firstInPair = false;
                 continue;
-            } else {
-                char prev{message[i - 1]};
-                if (current != prev) {
-                    // If second in pair but not equal to previous character, just add it
-                    pairedMsg += current;
-                    firstInPair = true;
-                } else if (current != 'X') {
-                    // If second in pair, need and x before character, and next character is second in pair
-                    pairedMsg += 'X';
-                    pairedMsg += current;
-                } else
-                    // If x, need a q instead of x as previous character
-                    pairedMsg += "QX";
+            } else if (secondInPair && current == prev && current == 'X') {
+                // If x, need a q instead of x as previous character
+                pairedMsg += "QX";
+                continue;
             }
+            pairedMsg += current;
+            secondInPair = !secondInPair;
         }
 
         // if the size of input is odd, add a trailing Z
