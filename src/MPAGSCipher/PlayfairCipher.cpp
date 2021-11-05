@@ -18,12 +18,23 @@ void PlayfairCipher::setKey(const std::string& key)
     key_ += alphabet_;
 
     // Make sure the key is upper case
+    // For info on why ::toupper rather than std::toupper, see:
+    // https://stackoverflow.com/questions/7131858/stdtransform-and-toupper-nomatching-function
     std::transform(key_.begin(), key_.end(), key_.begin(), ::toupper);
 
     // Remove non-alpha characters
+    auto alphaIter {std::remove_if(key_.begin(), key_.end(), [] (char c) {return !(std::isalpha(c));} )};
+    key_.erase(alphaIter, key_.end());
 
     // Change J -> I
-    
+    auto jToI = [] (const char c) {
+        if (c == 'J')
+            return 'I';
+        else
+            return c;
+    };
+    std::transform(key_.begin(), key_.end(), key_.begin(), jToI);
+
     // Remove duplicated letters
     
     // Store the coords of each letter
